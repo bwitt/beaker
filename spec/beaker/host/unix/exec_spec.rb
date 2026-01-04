@@ -29,6 +29,12 @@ module Beaker
         expect(instance).to receive(:execute).with("rm -rf #{path}").and_return(0)
         expect(instance.rm_rf(path)).to be === 0
       end
+
+      it 'quotes paths containing spaces' do
+        path = '/path/to/delete with spaces'
+        expect(instance).to receive(:execute).with("rm -rf \"#{path}\"").and_return(0)
+        expect(instance.rm_rf(path)).to be === 0
+      end
     end
 
     context 'mv' do

@@ -34,7 +34,7 @@ module Beaker
       ENV.replace(backup)
     end
 
-    def execute command, _options = {}, stdout_callback = nil, _stderr_callback = stdout_callback
+    def execute command, options = {}, stdout_callback = nil, stderr_callback = stdout_callback
       result = Result.new(@hostname, command)
       envs = {}
       if File.readable?(@ssh_env_file)
@@ -52,12 +52,14 @@ module Beaker
           result.stdout << std_out
           result.stderr << std_err
           result.exit_code = status.exitstatus
-          @logger.info(result.stdout) unless result.stdout.empty?
-          @logger.info(result.stderr) unless result.stderr.empty?
+          if !options[:silent]
+            stdout_callback&.call(std_out) unless std_out.empty?
+            stderr_callback&.call(std_err) unless std_err.empty?
+          end
         end
       rescue => e
         result.stderr << e.inspect
-        @logger.info(result.stderr)
+        stderr_callback&.call(result.stderr) if !options[:silent]
         result.exit_code = 1
       end
 

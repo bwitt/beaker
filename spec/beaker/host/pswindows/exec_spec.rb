@@ -27,8 +27,19 @@ module Beaker
       it "deletes" do
         path = '/path/to/delete'
         corrected_path = '\\path\\to\\delete'
-        expect(instance).to receive(:execute).with(%(del /s /q "#{corrected_path}")).and_return(0)
-        expect(instance.rm_rf(path)).to eq(0)
+
+        result = Beaker::Result.new(nil, '')
+        result.exit_code = 0
+        result.stdout = ''
+
+        expect(instance).to receive(:exec)
+          .with(
+            satisfy { |cmd| cmd.is_a?(Beaker::Command) && cmd.command == 'powershell.exe' && cmd.args.join(' ').include?("Remove-Item") && cmd.args.join(' ').include?(corrected_path) },
+            :accept_all_exit_codes => true,
+          )
+          .and_return(result)
+
+        expect(instance.rm_rf(path)).to eq('')
       end
     end
 
@@ -37,7 +48,7 @@ module Beaker
       let(:destination) { '/destination/path/of/content' }
 
       it 'rm first' do
-        expect(instance).to receive(:execute).with("del /s /q \"\\destination\\path\\of\\content\"").and_return(0)
+        expect(instance).to receive(:rm_rf).with(destination.tr('/', '\\')).and_return('')
         expect(instance).to receive(:execute).with("move /y #{origin.tr('/', '\\')} #{destination.tr('/', '\\')}").and_return(0)
         expect(instance.mv(origin, destination)).to eq(0)
       end

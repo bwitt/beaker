@@ -156,7 +156,9 @@ module Unix::Exec
   # Recursively remove the path provided
   # @param [String] path The path to remove
   def rm_rf path
-    execute("rm -rf #{path}")
+    path_str = path.to_s
+    cmd = path_str.include?(' ') ? %(rm -rf "#{path_str}") : "rm -rf #{path_str}"
+    execute(cmd)
   end
 
   # Move the origin to destination. The destination is removed prior to moving.

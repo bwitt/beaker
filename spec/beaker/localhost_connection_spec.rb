@@ -43,6 +43,28 @@ module Beaker
         expect(connection.execute('my_command')).to be_a Result
       end
 
+      it 'invokes stdout/stderr callbacks when provided and not silent' do
+        allow(Open3).to receive(:capture3).and_return(["stdout\n", "stderr\n", double({ exitstatus: 0 })])
+        stdout_callback = double('stdout_callback')
+        stderr_callback = double('stderr_callback')
+        expect(stdout_callback).to receive(:call).with("stdout\n")
+        expect(stderr_callback).to receive(:call).with("stderr\n")
+
+        connection.connect
+        connection.execute('my_command', {}, stdout_callback, stderr_callback)
+      end
+
+      it 'does not invoke callbacks when silent' do
+        allow(Open3).to receive(:capture3).and_return(["stdout\n", "stderr\n", double({ exitstatus: 0 })])
+        stdout_callback = double('stdout_callback')
+        stderr_callback = double('stderr_callback')
+        expect(stdout_callback).not_to receive(:call)
+        expect(stderr_callback).not_to receive(:call)
+
+        connection.connect
+        connection.execute('my_command', { :silent => true }, stdout_callback, stderr_callback)
+      end
+
       it 'sets stdout, stderr and exitcode' do
         allow(Open3).to receive(:capture3).and_return(['stdout', 'stderr', double({ exitstatus: 0 })])
         connection.connect

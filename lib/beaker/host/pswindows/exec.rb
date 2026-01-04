@@ -21,8 +21,18 @@ module PSWindows::Exec
 
   def rm_rf path
     # ensure that we have the right slashes for windows
-    path = path.tr('/', '\\')
-    execute(%(del /s /q "#{path}"))
+    normalized_path = path.tr('/', '\\')
+    escaped_path = normalized_path.gsub("'", "''")
+
+    # Remove-Item handles both files and directories. Use -LiteralPath to avoid wildcard expansion.
+    result = exec(
+      powershell(
+        "if (Test-Path -LiteralPath '#{escaped_path}') { Remove-Item -LiteralPath '#{escaped_path}' -Recurse -Force -ErrorAction SilentlyContinue }",
+      ),
+      :accept_all_exit_codes => true,
+    )
+
+    result.stdout.chomp
   end
 
   # Move the origin to destination. The destination is removed prior to moving.
